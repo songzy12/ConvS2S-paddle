@@ -1,1 +1,1 @@
-# conv-seq2seq-paddle
+# ConvS2S-paddle
