@@ -17,3 +17,11 @@ TBC: time x batch x channel.
 `FConvDecoder` is a subclass of `FairseqIncrementalDecoder`.
 
 ### LinearizedConv1d
+
+## FairSeq Cli
+
+- fairseq-preprocess
+- fairseq-train
+- fairseq-generate
+
+`docs/command_line_tools.rst`
