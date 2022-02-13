@@ -26,6 +26,18 @@ fairseq-preprocess \
     --workers 20
 ```
 
+`fairseq/binarizer.py`
+
+```
+class FileBinarizer:
+    def _binarize_file_chunk(
+                ds.add_item(binarizer.binarize_line(line, summary))
+
+class VocabularyDatasetBinarizer(Binarizer):
+    def binarize_line(
+            ids = torch.IntTensor(id_list)
+```
+
 ## Train
 
 ```
