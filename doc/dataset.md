@@ -22,7 +22,7 @@ FILES=(
 )
 ```
 
-## Moses
+## Tokenizer: Moses
 
 ```
 git clone https://github.com/moses-smt/mosesdecoder.git
