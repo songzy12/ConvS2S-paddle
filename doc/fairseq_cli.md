@@ -91,6 +91,66 @@ fairseq-train \
 
 ### Code
 
+`fairseq_cli/train.py`
+
+```
+def main(cfg: FairseqConfig) -> None:
+    task = tasks.setup_task(cfg.task)
+    model = task.build_model(cfg.model)
+    criterion = task.build_criterion(cfg.criterion)
+
+    trainer = Trainer(cfg, task, model, criterion, quantizer)    
+    while epoch_itr.next_epoch_idx <= max_epoch:
+        # train for one epoch
+        valid_losses, should_stop = train(cfg, trainer, task, epoch_itr)
+```
+
+```
+def train(
+    cfg: DictConfig, trainer: Trainer, task: tasks.FairseqTask, epoch_itr
+) -> Tuple[List[Optional[float]], bool]:
+
+    for i, samples in enumerate(progress):
+            log_output = trainer.train_step(samples)
+```
+
+`fairseq/trainer.py`
+
+```
+    def train_step(self, samples, raise_oom=False):
+                    # forward and backward
+                    loss, sample_size_i, logging_output = self.task.train_step(
+                        sample=sample,
+                        model=self.model,
+                        criterion=self.criterion,
+                        optimizer=self.optimizer,
+                        update_num=self.get_num_updates(),
+                        ignore_grad=is_dummy_batch,
+                        **extra_kwargs,
+                    )
+                # take an optimization step
+                self.task.optimizer_step(
+                    self.optimizer, model=self.model, update_num=self.get_num_updates()
+                )
+```
+
+`fairseq/tasks/translation.py`
+`fairseq/tasks/fairseq_task.py`
+
+```
+    def train_step(
+        self, sample, model, criterion, optimizer, update_num, ignore_grad=False
+    ):    
+        with torch.autograd.profiler.record_function("forward"):
+            with torch.cuda.amp.autocast(enabled=(isinstance(optimizer, AMPOptimizer))):
+                loss, sample_size, logging_output = criterion(model, sample)
+        with torch.autograd.profiler.record_function("backward"):
+            optimizer.backward(loss)
+
+    def optimizer_step(self, optimizer, model, update_num):
+        optimizer.step()
+```
+
 ### Result
 
 ## Generate
