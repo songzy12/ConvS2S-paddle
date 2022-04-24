@@ -4,8 +4,9 @@ import paddle
 import paddle.nn as nn
 from paddlenlp.metrics import Perplexity
 
-from fconv import Seq2SeqAttnModel, CrossEntropyCriterion
+from fconv import Seq2SeqAttnModel
 from data import create_train_loader
+from loss import CrossEntropyCriterion
 
 
 def do_train(args):
