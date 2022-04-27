@@ -15,16 +15,19 @@ def create_train_loader(args):
     batch_size = args.batch_size
     max_len = args.max_len
 
-    train_ds, dev_ds = load_dataset('iwslt15', splits=('train', 'dev'))
-    src_vocab = Vocab.load_vocabulary(**train_ds.vocab_info['en'])
-    tgt_vocab = Vocab.load_vocabulary(**train_ds.vocab_info['vi'])
+    # WMT14 EN-DE 经过BPE分词的英语-德语翻译数据集
+    # https://paddlenlp.readthedocs.io/zh/latest/data_prepare/dataset_list.html
+    train_ds, dev_ds = load_dataset('wmt14ende', splits=('train', 'dev'))
+    # paddlenlp/datasets/wmt14ende.py
+    src_vocab = Vocab.load_vocabulary(**train_ds.vocab_info['bpe'])
+    tgt_vocab = src_vocab
     bos_id = src_vocab[src_vocab.bos_token]
     eos_id = src_vocab[src_vocab.eos_token]
     pad_id = eos_id
 
     def convert_example(example):
         source = example['en'].split()[:max_len]
-        target = example['vi'].split()[:max_len]
+        target = example['de'].split()[:max_len]
 
         source = src_vocab.to_indices(source)
         target = tgt_vocab.to_indices(target)
