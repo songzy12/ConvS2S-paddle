@@ -1,3 +1,5 @@
+# For initialization strategy of layer weights, see:
+#   Section 3.5 of https://arxiv.org/pdf/1705.03122.pdf
 import paddle
 import paddle.nn as nn
 
