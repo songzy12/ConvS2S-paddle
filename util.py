@@ -1,3 +1,6 @@
+import paddle
+import paddle.nn as nn
+
 
 def extend_conv_spec(convolutions):
     """
@@ -18,3 +21,13 @@ def extend_conv_spec(convolutions):
                 + ". expected 2 or 3"
             )
     return tuple(extended)
+
+
+def Embedding(num_embeddings, embedding_dim, padding_idx):
+    """Weight-normalized Embedding layer"""
+    weight_attr = paddle.ParamAttr(initializer=nn.initializer.Normal(0.0, 0.1))
+    embedding = nn.Embedding(num_embeddings, embedding_dim,
+                             padding_idx=padding_idx, weight_attr=weight_attr)
+    # The weight of padding_idx is set to 0 when embedding layer is initialized:
+    #   embedding.weight[padding_idx] = 0.0
+    return embedding
