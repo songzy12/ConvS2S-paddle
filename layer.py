@@ -6,3 +6,5 @@
 # - torch/nn/modules/conv.py
 # - fairseq/modules/linearized_convolution.py
 # - fairseq/modules/conv_tbc.py
+# - https://github.com/PaddlePaddle/Paddle/issues/35257
+# - https://www.telesens.co/2019/04/21/understanding-incremental-decoding-in-fairseq/
