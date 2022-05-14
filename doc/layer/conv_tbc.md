@@ -119,3 +119,5 @@ def conv1d(x,
             L_{out} = \frac{(L_{in} + 2 * padding - (dilation * (L_f - 1) + 1))}{stride} + 1
     """
 ```
+
+NOTE: to take input from Embedding layer directly, we should set data_format as `NLC`.
