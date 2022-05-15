@@ -1,5 +1,8 @@
 # For initialization strategy of layer weights, see:
 #   Section 3.5 of https://arxiv.org/pdf/1705.03122.pdf
+# For weight normalization, see:
+#   Section 4.2 of https://arxiv.org/pdf/1705.03122.pdf, then
+#   https://arxiv.org/pdf/1602.07868.pdf
 
 import math
 
