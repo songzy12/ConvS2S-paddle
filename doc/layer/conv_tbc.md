@@ -102,6 +102,23 @@ An explanation of the above terms in context of NLP:
 `paddle/nn/layer/conv.py`
 
 ```
+class Conv1D(_ConvNd):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 kernel_size,
+                 stride=1,
+                 padding=0,
+                 dilation=1,
+                 groups=1,
+                 padding_mode='zeros',
+                 weight_attr=None,
+                 bias_attr=None,
+                 data_format="NCL"):
+```
+
+`paddle/nn/functional/conv.py`
+```
 def conv1d(x,
            weight,
            bias=None,
