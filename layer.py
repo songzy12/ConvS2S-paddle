@@ -13,3 +13,4 @@
 # TODO(songzy): LinearizedConvolution
 # - fairseq/modules/linearized_convolution.py
 # - incremental decoding: https://www.telesens.co/2019/04/21/understanding-incremental-decoding-in-fairseq/
+# - PaddleNLP: https://github.com/PaddlePaddle/PaddleNLP/blob/develop/examples/machine_translation/seq2seq/seq2seq_attn.py#L242
