@@ -1,0 +1,2 @@
+- https://github.com/PaddlePaddle/PaddleNLP/blob/develop/examples/machine_translation/seq2seq/seq2seq_attn.py#L68
+- https://github.com/pytorch/fairseq/blob/main/fairseq/models/fconv.py#L325
