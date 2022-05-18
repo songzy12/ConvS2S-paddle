@@ -37,7 +37,7 @@ class LayerTest(unittest.TestCase):
         self.assertEqual(linear.bias.shape, [256])
         self.assertEqual(linear.bias.norm(), 0)
 
-        x = paddle.randn((3, 512), dtype="float32")
+        x = paddle.randn((3, 512))
         self.assertEqual(x.shape, [3, 512])
 
         y = linear(x)
@@ -57,7 +57,7 @@ class LayerTest(unittest.TestCase):
         self.assertEqual(conv1d.bias.norm(), 0)
 
         # batch_size, sequence_length, in_channels
-        x = paddle.randn((3, 100, 512), dtype="float32")
+        x = paddle.randn((3, 100, 512))
         self.assertEqual(x.shape, [3, 100, 512])
 
         y = conv1d(x)

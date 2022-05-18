@@ -4,6 +4,9 @@ import paddle
 import paddle.nn.functional as F
 import torch
 
+import layer
+
+
 class ConvTbcTest(unittest.TestCase):
     def test_conv_tbc(self):
         x = torch.ones([1000, 64, 512])
@@ -31,3 +34,25 @@ class ConvTbcTest(unittest.TestCase):
         conv1d = conv1d.transpose((2, 0, 1))
         # conv1d.shape = [998, 64, 768]; (L_{out}, N, C_{out})
         self.assertListEqual(conv1d.shape, [998, 64, 768])
+
+
+class AttentionLayerTest(unittest.TestCase):
+    def test_attention_layer(self):
+        attention_layer = layer.AttentionLayer(
+            conv_channels=512, embed_dim=768)
+
+        # batch, length_tgt, conv_channels
+        x = paddle.randn((64, 1000, 512))
+        # batch, length_tgt, embed_dim
+        target_embedding = paddle.randn((64, 1000, 768))
+        # encoder_a: batch, embed_dim, length_src; transposed by _split_encoder_out
+        # encoder_b: batch, length_src, embed_dim
+        encoder_out = [
+            paddle.randn((64, 768, 1005)), paddle.randn((64, 1005, 768))
+        ]
+        encoder_padding_mask = None
+
+        y, attn_scores = attention_layer(x, target_embedding, encoder_out,
+                                         encoder_padding_mask)
+        self.assertListEqual(y.shape, [64, 1000, 512]) # batch, length_tgt, conv_channels
+        self.assertListEqual(attn_scores.shape, [64, 1000, 1005]) # batch, length_tgt, length_src
