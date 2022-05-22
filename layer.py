@@ -9,7 +9,7 @@ import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 
-import util
+import utils
 
 
 class FConvEncoder(nn.Layer):
@@ -41,12 +41,12 @@ class FConvEncoder(nn.Layer):
         self.num_attention_layers = None
 
         self.padding_idx = padding_idx
-        self.embed_tokens = util.Embedding(vocab_size, embed_dim,
-                                           self.padding_idx)
+        self.embed_tokens = utils.Embedding(vocab_size, embed_dim,
+                                            self.padding_idx)
 
-        convolutions = util.extend_conv_spec(convolutions)
+        convolutions = utils.extend_conv_spec(convolutions)
         in_channels = convolutions[0][0]
-        self.fc1 = util.Linear(embed_dim, in_channels, dropout=dropout)
+        self.fc1 = utils.Linear(embed_dim, in_channels, dropout=dropout)
         self.projections = []
         self.convolutions = []
         self.residuals = []
@@ -59,14 +59,14 @@ class FConvEncoder(nn.Layer):
             else:
                 residual_dim = layer_in_channels[-residual]
             self.projections.append(
-                util.Linear(residual_dim, out_channels
-                            ) if residual_dim != out_channels else None)
+                utils.Linear(residual_dim, out_channels
+                             ) if residual_dim != out_channels else None)
             if kernel_size % 2 == 1:
                 padding = kernel_size // 2
             else:
                 padding = 0
             self.convolutions.append(
-                util.Conv1D(
+                utils.Conv1D(
                     in_channels,
                     out_channels * 2,
                     kernel_size,
@@ -76,7 +76,7 @@ class FConvEncoder(nn.Layer):
             self.residuals.append(residual)
             in_channels = out_channels
             layer_in_channels.append(out_channels)
-        self.fc2 = util.Linear(in_channels, embed_dim)
+        self.fc2 = utils.Linear(in_channels, embed_dim)
 
     def forward(self, src_tokens):
         """
@@ -164,9 +164,9 @@ class AttentionLayer(nn.Layer):
         super(AttentionLayer, self).__init__()
 
         # projects from output of convolution to embedding dimension
-        self.in_projection = util.Linear(conv_channels, embed_dim)
+        self.in_projection = utils.Linear(conv_channels, embed_dim)
         # projects from embedding dimension to convolution size
-        self.out_projection = util.Linear(embed_dim, conv_channels)
+        self.out_projection = utils.Linear(embed_dim, conv_channels)
 
     def forward(self, x, target_embedding, encoder_out, encoder_padding_mask):
         residual = x

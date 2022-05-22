@@ -1,4 +1,4 @@
-A PaddlePaddle re-implementation of ConvS2S [1].
+A PaddlePaddle re-implementation of ConvS2S [1]. For practice.
 
 ## Reference
 

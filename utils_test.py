@@ -5,19 +5,19 @@ import paddle
 import torch
 import fairseq
 
-import util
+import utils
 
 
 class UtilTest(unittest.TestCase):
     def test_extend_conv_spec(self):
         convolutions = [(512, 3), (512, 3, 2)]
         self.assertEqual(
-            util.extend_conv_spec(convolutions), ((512, 3, 1), (512, 3, 2)))
+            utils.extend_conv_spec(convolutions), ((512, 3, 1), (512, 3, 2)))
 
 
 class LayerTest(unittest.TestCase):
     def test_embedding_layer(self):
-        embedding = util.Embedding(
+        embedding = utils.Embedding(
             num_embeddings=10, embedding_dim=512, padding_idx=0)
         self.assertEqual(embedding.weight.shape, [10, 512])
         self.assertEqual(embedding.weight[0].norm(), 0)
@@ -31,7 +31,7 @@ class LayerTest(unittest.TestCase):
         self.assertEqual(embedding_out.shape, [3, 1, 512])
 
     def test_linear_layer(self):
-        linear = util.Linear(in_features=512, out_features=256)
+        linear = utils.Linear(in_features=512, out_features=256)
         # in_features, out_features
         self.assertEqual(linear.weight.shape, [512, 256])
         self.assertEqual(linear.bias.shape, [256])
@@ -50,7 +50,7 @@ class LayerTest(unittest.TestCase):
         self.assertEqual(torch_linear.weight.shape, (256, 512))
 
     def test_conv1d_layer(self):
-        conv1d = util.Conv1D(in_channels=512, out_channels=256, kernel_size=3)
+        conv1d = utils.Conv1D(in_channels=512, out_channels=256, kernel_size=3)
         # out_channels, in_channels, kernel_size
         self.assertEqual(conv1d.weight.shape, [256, 512, 3])
         self.assertEqual(conv1d.bias.shape, [256])
