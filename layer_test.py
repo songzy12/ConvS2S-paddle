@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import paddle
 import paddle.nn.functional as F
 import torch
@@ -8,6 +9,7 @@ import layer
 
 
 class ConvTbcTest(unittest.TestCase):
+
     def test_conv_tbc(self):
         x = torch.ones([1000, 64, 512])
         # x.shape = [1000, 64, 512]; (L_{in}, N, C_{in})
@@ -36,10 +38,33 @@ class ConvTbcTest(unittest.TestCase):
         self.assertListEqual(conv1d.shape, [998, 64, 768])
 
 
+class FConvEncoderTest(unittest.TestCase):
+
+    def test_fconv_encoder(self):
+        encoder = layer.FConvEncoder(vocab_size=10000,
+                                     embed_dim=512,
+                                     padding_idx=0,
+                                     dropout=0.0)
+
+        input_ids = np.random.randint(low=0, high=10000, size=(64, 1000))
+        input_ids = paddle.to_tensor(input_ids)
+        # input_ids.shape = [64, 1000]; (N, L_{in})
+
+        encoder_output, encoder_padding_mask = encoder(input_ids)
+        x, y = encoder_output
+        # x.shape = [64, 1000, 512]; (N, L_{out}, C_{out})
+        # y.shape = [64, 1000, 512]; (N, L_{out}, C_{out})
+        self.assertListEqual(x.shape, [64, 1000, 512])
+        self.assertListEqual(y.shape, [64, 1000, 512])
+        # encoder_state.shape = [64, 1000]; (N, L)
+        self.assertListEqual(encoder_padding_mask.shape, [64, 1000])
+
+
 class AttentionLayerTest(unittest.TestCase):
+
     def test_attention_layer(self):
-        attention_layer = layer.AttentionLayer(
-            conv_channels=512, embed_dim=768)
+        attention_layer = layer.AttentionLayer(conv_channels=512,
+                                               embed_dim=768)
 
         # batch, length_tgt, conv_channels
         x = paddle.randn((64, 1000, 512))
@@ -48,11 +73,14 @@ class AttentionLayerTest(unittest.TestCase):
         # encoder_a: batch, embed_dim, length_src; transposed by _split_encoder_out
         # encoder_b: batch, length_src, embed_dim
         encoder_out = [
-            paddle.randn((64, 768, 1005)), paddle.randn((64, 1005, 768))
+            paddle.randn((64, 768, 1005)),
+            paddle.randn((64, 1005, 768))
         ]
         encoder_padding_mask = None
 
         y, attn_scores = attention_layer(x, target_embedding, encoder_out,
                                          encoder_padding_mask)
-        self.assertListEqual(y.shape, [64, 1000, 512]) # batch, length_tgt, conv_channels
-        self.assertListEqual(attn_scores.shape, [64, 1000, 1005]) # batch, length_tgt, length_src
+        self.assertListEqual(
+            y.shape, [64, 1000, 512])  # batch, length_tgt, conv_channels
+        self.assertListEqual(attn_scores.shape,
+                             [64, 1000, 1005])  # batch, length_tgt, length_src
