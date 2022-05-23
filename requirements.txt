@@ -1,0 +1,6 @@
+fairseq==0.10.2
+numpy==1.22.3
+paddle==1.0.2
+paddlenlp==2.2.6
+paddlepaddle==2.2.2
+torch==1.11.0
