@@ -8,7 +8,7 @@ import torch
 import layer
 
 
-class ConvTbcTest(unittest.TestCase):
+class Conv1dTest(unittest.TestCase):
 
     def test_conv_tbc(self):
         x = torch.ones([1000, 64, 512])
@@ -41,7 +41,7 @@ class ConvTbcTest(unittest.TestCase):
 class FConvEncoderTest(unittest.TestCase):
 
     def test_fconv_encoder(self):
-        encoder = layer.FConvEncoder(vocab_size=10000,
+        encoder = layer.FConvEncoder(num_embeddings=10000,
                                      embed_dim=512,
                                      padding_idx=0,
                                      dropout=0.0)
@@ -84,3 +84,32 @@ class AttentionLayerTest(unittest.TestCase):
             y.shape, [64, 1000, 512])  # batch, length_tgt, conv_channels
         self.assertListEqual(attn_scores.shape,
                              [64, 1000, 1005])  # batch, length_tgt, length_src
+
+
+class FConvDecoderTest(unittest.TestCase):
+
+    def test_fconv_decoder(self):
+        decoder = layer.FConvDecoder(num_embeddings=10000,
+                                     embed_dim=512,
+                                     padding_idx=0,
+                                     convolutions=((512, 3), ) * 3,
+                                     dropout=0.0)
+        decoder.eval()
+
+        prev_output_tokens = np.random.randint(low=0,
+                                               high=10000,
+                                               size=(64, 1000))
+        prev_output_tokens = paddle.to_tensor(prev_output_tokens)
+
+        encoder_out = [
+            paddle.randn((64, 1000, 512)),
+            paddle.randn((64, 1000, 512))
+        ]
+        encoder_padding_mask = None
+
+        y, attn_scores = decoder(prev_output_tokens, encoder_out,
+                                 encoder_padding_mask)
+        # y.shape = [64, 1000, 10000]; (N, L_{out}, num_embeddings)
+        self.assertListEqual(y.shape, [64, 1000, 10000])
+        # attn_scores.shape =  (N, L_{out}, L_{in})
+        self.assertListEqual(attn_scores.shape, [64, 1000, 1000])

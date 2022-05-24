@@ -27,21 +27,19 @@ class FConvEncoder(nn.Layer):
         dropout (float, optional): dropout to be applied before each conv layer
     """
 
-    def __init__(
-        self,
-        vocab_size,
-        embed_dim=512,
-        padding_idx=None,
-        convolutions=((512, 3), ) * 20,
-        dropout=0.1,
-    ):
+    def __init__(self,
+                 num_embeddings,
+                 embed_dim=512,
+                 padding_idx=0,
+                 convolutions=((512, 3), ) * 20,
+                 dropout=0.1):
         super().__init__()
         self.dropout_module = nn.Dropout(p=dropout,
                                          name=self.__class__.__name__)
         self.num_attention_layers = None
 
         self.padding_idx = padding_idx
-        self.embed_tokens = utils.Embedding(vocab_size, embed_dim,
+        self.embed_tokens = utils.Embedding(num_embeddings, embed_dim,
                                             self.padding_idx)
 
         convolutions = utils.extend_conv_spec(convolutions)
@@ -204,3 +202,119 @@ class AttentionLayer(nn.Layer):
         # project back
         x = (self.out_projection(x) + residual) * math.sqrt(0.5)
         return x, attn_scores
+
+
+class FConvDecoder(nn.Layer):
+
+    def __init__(self,
+                 num_embeddings,
+                 embed_dim=512,
+                 padding_idx=0,
+                 convolutions=((512, 3), ) * 20,
+                 dropout=0.1):
+        super(FConvDecoder, self).__init__()
+        self.dropout_module = nn.Dropout(p=dropout,
+                                         name=self.__class__.__name__)
+
+        convolutions = utils.extend_conv_spec(convolutions)
+        in_channels = convolutions[0][0]
+
+        self.embed_tokens = utils.Embedding(num_embeddings, embed_dim,
+                                            padding_idx)
+
+        self.fc1 = utils.Linear(embed_dim, in_channels, dropout=dropout)
+        self.projections = []
+        self.convolutions = []
+        self.attention = []
+        self.residuals = []
+
+        layer_in_channels = [in_channels]
+        for _, (out_channels, kernel_size,
+                residual) in enumerate(convolutions):
+            if residual == 0:
+                residual_dim = out_channels
+            else:
+                residual_dim = layer_in_channels[-residual]
+            self.projections.append(
+                utils.Linear(residual_dim, out_channels
+                             ) if residual_dim != out_channels else None)
+            # TODO(songzy): padding
+            # fairseq/modules/linearized_convolution.py
+            #   output = output[: -self.padding[0], :, :]
+            self.convolutions.append(
+                utils.Conv1D(
+                    in_channels,
+                    out_channels * 2,
+                    kernel_size,
+                    padding=(kernel_size - 1),
+                    dropout=dropout,
+                ))
+            self.attention.append(AttentionLayer(out_channels, embed_dim))
+            self.residuals.append(residual)
+            in_channels = out_channels
+            layer_in_channels.append(out_channels)
+
+        # TODO(songzy): check AdaptiveSoftmax.
+        self.fc2 = utils.Linear(in_channels, embed_dim)
+
+        self.fc3 = nn.Linear(embed_dim, num_embeddings)
+        # TODO(songzy): share params of embed_tokens with fc3
+
+    def forward(self, prev_output_tokens, encoder_out, encoder_padding_mask):
+        # split and transpose encoder outputs
+        encoder_a, encoder_b = encoder_out
+        encoder_a = encoder_a.transpose((0, 2, 1))
+
+        # embed tokens
+        x = self.embed_tokens(prev_output_tokens)
+        x = self.dropout_module(x)
+        target_embedding = x
+
+        # project to size of convolution
+        x = self.fc1(x)
+
+        # temporal convolutions
+        avg_attn_scores = None
+        num_attn_layers = len(self.attention)
+        residuals = [x]
+        for proj, conv, attention, res_layer in zip(self.projections,
+                                                    self.convolutions,
+                                                    self.attention,
+                                                    self.residuals):
+            if res_layer > 0:
+                residual = residuals[-res_layer]
+                residual = residual if proj is None else proj(residual)
+            else:
+                residual = None
+
+            x = self.dropout_module(x)
+            # TODO(songzy): padding
+            # fairseq/modules/linearized_convolution.py
+            #   output = output[: -self.padding[0], :, :]
+            x = conv(x)[:, :-2, :]
+            x = F.glu(x, axis=2)
+
+            # attention
+            x, attn_scores = attention(x, target_embedding,
+                                       (encoder_a, encoder_b),
+                                       encoder_padding_mask)
+
+            if not self.training:
+                attn_scores = attn_scores / num_attn_layers
+                if avg_attn_scores is None:
+                    avg_attn_scores = attn_scores
+                else:
+                    avg_attn_scores.add_(attn_scores)
+
+            # residual
+            if residual is not None:
+                x = (x + residual) * math.sqrt(0.5)
+            residuals.append(x)
+
+        # project back to size of vocabulary if not using adaptive softmax
+        if self.fc2 is not None and self.fc3 is not None:
+            x = self.fc2(x)
+            x = self.dropout_module(x)
+            x = self.fc3(x)
+
+        return x, avg_attn_scores
