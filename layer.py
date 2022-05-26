@@ -126,10 +126,15 @@ class FConvEncoder(nn.Layer):
             x = self.dropout_module(x)
             if conv._kernel_size[0] % 2 == 1:
                 # padding is implicit in the conv
+                # i.e. padding_l = padding_r = conv._kernel_size[0] // 2
+                # after padding, the length would be x + kernel_size[0] - 1
+                # then after convolution, the length would still be x
                 x = conv(x)
             else:
                 padding_l = (conv._kernel_size[0] - 1) // 2
                 padding_r = conv._kernel_size[0] // 2
+                # after padding, the length would be x + kernel_size[0] - 1
+                # then after convolution, the length would still be x
                 x = F.pad(x, (0, 0, 0, 0, padding_l, padding_r))
                 x = conv(x)
             # x.shape: B x T x C
