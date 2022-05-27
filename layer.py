@@ -180,11 +180,8 @@ class AttentionLayer(nn.Layer):
 
         # don't attend over padding
         if encoder_padding_mask is not None:
-            x = paddle.where(
-                encoder_padding_mask.unsqueeze(1),
-                paddle.full(x.shape, float("-inf"),
-                            x.float().dtype),
-                x.float()).type_as(x)  # FP16 support: cast to float and back
+            x = paddle.where(encoder_padding_mask.unsqueeze(1),
+                             paddle.full(x.shape, float("-inf"), x.dtype), x)
 
         # softmax over last dim
         sz = x.shape
@@ -199,8 +196,8 @@ class AttentionLayer(nn.Layer):
         if encoder_padding_mask is None:
             x = x * (s * math.sqrt(1.0 / s))
         else:
-            s = s - encoder_padding_mask.type_as(x).sum(
-                dim=1, keepdim=True)  # exclude padding
+            s = s - encoder_padding_mask.cast(x.dtype).sum(
+                axis=1, keepdim=True)  # exclude padding
             s = s.unsqueeze(-1)
             x = x * (s * s.rsqrt())
 
