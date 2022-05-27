@@ -243,9 +243,6 @@ class FConvDecoder(nn.Layer):
             self.projections.append(
                 utils.Linear(residual_dim, out_channels
                              ) if residual_dim != out_channels else None)
-            # TODO(songzy): padding
-            # fairseq/modules/linearized_convolution.py
-            #   output = output[: -self.padding[0], :, :]
             self.convolutions.append(
                 utils.Conv1D(
                     in_channels,
@@ -293,10 +290,11 @@ class FConvDecoder(nn.Layer):
                 residual = None
 
             x = self.dropout_module(x)
-            # TODO(songzy): padding
+            # This should be equivalent to the following padding logic:
             # fairseq/modules/linearized_convolution.py
             #   output = output[: -self.padding[0], :, :]
-            x = conv(x)[:, :-2, :]
+            # This way we are keeping the second dimension unchanged.
+            x = conv(x)[:, :-(conv._kernel_size[0] - 1), :]
             x = F.glu(x, axis=2)
 
             # attention
