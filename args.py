@@ -1,4 +1,3 @@
-
 import argparse
 
 
@@ -12,16 +11,7 @@ def parse_args():
         help="learning rate for optimizer")
 
     parser.add_argument(
-        "--num_layers",
-        type=int,
-        default=1,
-        help="layers number of encoder and decoder")
-
-    parser.add_argument(
-        "--hidden_size",
-        type=int,
-        default=100,
-        help="hidden size of encoder and decoder")
+        "--embed_dim", type=int, default=512, help="dim of word embeddings")
 
     parser.add_argument(
         "--batch_size", type=int, help="batch size of each step")
@@ -87,7 +77,8 @@ def parse_args():
         "--export_path",
         type=str,
         default=None,
-        help="The output file prefix used to save the exported inference model.")
+        help="The output file prefix used to save the exported inference model."
+    )
 
     args = parser.parse_args()
     return args

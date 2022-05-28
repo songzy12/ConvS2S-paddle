@@ -41,7 +41,7 @@ class Conv1dTest(unittest.TestCase):
 class FConvEncoderTest(unittest.TestCase):
 
     def test_fconv_encoder(self):
-        encoder = layer.FConvEncoder(num_embeddings=10000,
+        encoder = layer.FConvEncoder(vocab_size=10000,
                                      embed_dim=512,
                                      padding_idx=0,
                                      dropout=0.0)
@@ -89,7 +89,7 @@ class AttentionLayerTest(unittest.TestCase):
 class FConvDecoderTest(unittest.TestCase):
 
     def test_fconv_decoder(self):
-        decoder = layer.FConvDecoder(num_embeddings=10000,
+        decoder = layer.FConvDecoder(vocab_size=10000,
                                      embed_dim=512,
                                      padding_idx=0,
                                      convolutions=((512, 3), ) * 3,

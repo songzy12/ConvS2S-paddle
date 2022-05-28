@@ -1,6 +1,5 @@
 python train.py \
-    --num_layers 2 \
-    --hidden_size 512 \
+    --embed_dim 512 \
     --batch_size 128 \
     --dropout 0.2 \
     --init_scale  0.1 \

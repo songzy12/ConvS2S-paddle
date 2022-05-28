@@ -28,18 +28,18 @@ class FConvEncoder(nn.Layer):
     """
 
     def __init__(self,
-                 num_embeddings,
+                 vocab_size,
                  embed_dim=512,
                  padding_idx=0,
                  convolutions=((512, 3), ) * 20,
                  dropout=0.1):
         super().__init__()
-        self.dropout_module = nn.Dropout(p=dropout,
-                                         name=self.__class__.__name__)
+        self.dropout_module = nn.Dropout(
+            p=dropout, name=self.__class__.__name__)
         self.num_attention_layers = None
 
         self.padding_idx = padding_idx
-        self.embed_tokens = utils.Embedding(num_embeddings, embed_dim,
+        self.embed_tokens = utils.Embedding(vocab_size, embed_dim,
                                             self.padding_idx)
 
         convolutions = utils.extend_conv_spec(convolutions)
@@ -57,8 +57,8 @@ class FConvEncoder(nn.Layer):
             else:
                 residual_dim = layer_in_channels[-residual]
             self.projections.append(
-                utils.Linear(residual_dim, out_channels
-                             ) if residual_dim != out_channels else None)
+                utils.Linear(residual_dim, out_channels)
+                if residual_dim != out_channels else None)
             if kernel_size % 2 == 1:
                 padding = kernel_size // 2
             else:
@@ -69,8 +69,7 @@ class FConvEncoder(nn.Layer):
                     out_channels * 2,
                     kernel_size,
                     dropout=dropout,
-                    padding=padding,
-                ))
+                    padding=padding, ))
             self.residuals.append(residual)
             in_channels = out_channels
             layer_in_channels.append(out_channels)
@@ -120,8 +119,9 @@ class FConvEncoder(nn.Layer):
                 residual = None
 
             if encoder_padding_mask is not None:
-                x = paddle.where(encoder_padding_mask.unsqueeze(-1),
-                                 paddle.full(x.shape, 0, x.dtype), x)
+                x = paddle.where(
+                    encoder_padding_mask.unsqueeze(-1),
+                    paddle.full(x.shape, 0, x.dtype), x)
 
             x = self.dropout_module(x)
             if conv._kernel_size[0] % 2 == 1:
@@ -148,8 +148,9 @@ class FConvEncoder(nn.Layer):
         x = self.fc2(x)
 
         if encoder_padding_mask is not None:
-            x = paddle.where(encoder_padding_mask.unsqueeze(-1),
-                             paddle.full(x.shape, 0, x.dtype), x)
+            x = paddle.where(
+                encoder_padding_mask.unsqueeze(-1),
+                paddle.full(x.shape, 0, x.dtype), x)
 
         # TODO(songzy): scale gradients (this only affects backward, not forward)
         # x = GradMultiply.apply(x, 1.0 / (2.0 * self.num_attention_layers))
@@ -162,7 +163,6 @@ class FConvEncoder(nn.Layer):
 
 
 class AttentionLayer(nn.Layer):
-
     def __init__(self, conv_channels, embed_dim):
         super(AttentionLayer, self).__init__()
 
@@ -180,8 +180,9 @@ class AttentionLayer(nn.Layer):
 
         # don't attend over padding
         if encoder_padding_mask is not None:
-            x = paddle.where(encoder_padding_mask.unsqueeze(1),
-                             paddle.full(x.shape, float("-inf"), x.dtype), x)
+            x = paddle.where(
+                encoder_padding_mask.unsqueeze(1),
+                paddle.full(x.shape, float("-inf"), x.dtype), x)
 
         # softmax over last dim
         sz = x.shape
@@ -207,22 +208,20 @@ class AttentionLayer(nn.Layer):
 
 
 class FConvDecoder(nn.Layer):
-
     def __init__(self,
-                 num_embeddings,
+                 vocab_size,
                  embed_dim=512,
                  padding_idx=0,
                  convolutions=((512, 3), ) * 20,
                  dropout=0.1):
         super(FConvDecoder, self).__init__()
-        self.dropout_module = nn.Dropout(p=dropout,
-                                         name=self.__class__.__name__)
+        self.dropout_module = nn.Dropout(
+            p=dropout, name=self.__class__.__name__)
 
         convolutions = utils.extend_conv_spec(convolutions)
         in_channels = convolutions[0][0]
 
-        self.embed_tokens = utils.Embedding(num_embeddings, embed_dim,
-                                            padding_idx)
+        self.embed_tokens = utils.Embedding(vocab_size, embed_dim, padding_idx)
 
         self.fc1 = utils.Linear(embed_dim, in_channels, dropout=dropout)
         self.projections = []
@@ -238,16 +237,15 @@ class FConvDecoder(nn.Layer):
             else:
                 residual_dim = layer_in_channels[-residual]
             self.projections.append(
-                utils.Linear(residual_dim, out_channels
-                             ) if residual_dim != out_channels else None)
+                utils.Linear(residual_dim, out_channels)
+                if residual_dim != out_channels else None)
             self.convolutions.append(
                 utils.Conv1D(
                     in_channels,
                     out_channels * 2,
                     kernel_size,
                     padding=(kernel_size - 1),
-                    dropout=dropout,
-                ))
+                    dropout=dropout, ))
             self.attention.append(AttentionLayer(out_channels, embed_dim))
             self.residuals.append(residual)
             in_channels = out_channels
@@ -256,7 +254,7 @@ class FConvDecoder(nn.Layer):
         # TODO(songzy): check AdaptiveSoftmax.
         self.fc2 = utils.Linear(in_channels, embed_dim)
 
-        self.fc3 = nn.Linear(embed_dim, num_embeddings)
+        self.fc3 = nn.Linear(embed_dim, vocab_size)
         # TODO(songzy): share params of embed_tokens with fc3
 
     def forward(self, prev_output_tokens, encoder_out, encoder_padding_mask):
@@ -276,10 +274,9 @@ class FConvDecoder(nn.Layer):
         avg_attn_scores = None
         num_attn_layers = len(self.attention)
         residuals = [x]
-        for proj, conv, attention, res_layer in zip(self.projections,
-                                                    self.convolutions,
-                                                    self.attention,
-                                                    self.residuals):
+        for proj, conv, attention, res_layer in zip(
+                self.projections, self.convolutions, self.attention,
+                self.residuals):
             if res_layer > 0:
                 residual = residuals[-res_layer]
                 residual = residual if proj is None else proj(residual)

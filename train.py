@@ -4,7 +4,7 @@ import paddle
 import paddle.nn as nn
 from paddlenlp.metrics import Perplexity
 
-from fconv import Seq2SeqAttnModel
+from fconv import FConvModel
 from data import create_train_loader
 from loss import CrossEntropyCriterion
 
@@ -13,12 +13,13 @@ def do_train(args):
     device = paddle.set_device(args.device)
 
     # Define dataloader
-    train_loader, eval_loader, src_vocab_size, tgt_vocab_size, eos_id = create_train_loader(
+    train_loader, eval_loader, src_vocab_size, tgt_vocab_size, padding_idx = create_train_loader(
         args)
 
+    # TODO(songzy): check how to set param convolutions.
     model = paddle.Model(
-        Seq2SeqAttnModel(src_vocab_size, tgt_vocab_size, args.hidden_size, args.
-                         hidden_size, args.num_layers, args.dropout, eos_id))
+        FConvModel(src_vocab_size, tgt_vocab_size, args.embed_dim, ((512, 3), )
+                   * 20, padding_idx, args.dropout))
 
     grad_clip = nn.ClipGradByGlobalNorm(args.max_grad_norm)
     optimizer = paddle.optimizer.Adam(
