@@ -60,6 +60,19 @@ def create_train_loader(args):
     return train_loader, dev_loader, len(src_vocab), len(tgt_vocab), pad_id
 
 
+def prepare_train_input(insts, bos_id, eos_id, pad_id):
+    # Add eos token id and bos token id.
+    insts = [([bos_id] + inst[0] + [eos_id], [bos_id] + inst[1] + [eos_id])
+             for inst in insts]
+    # Pad sequence using eos id.
+    src, src_length = Pad(pad_val=pad_id, ret_length=True)(
+        [inst[0] for inst in insts])
+    tgt, tgt_length = Pad(pad_val=pad_id, ret_length=True, dtype="int64")(
+        [inst[1] for inst in insts])
+    tgt_mask = (tgt[:, :-1] != pad_id).astype("float32")
+    return src, tgt[:, :-1], tgt[:, 1:, np.newaxis], tgt_mask
+
+
 def create_infer_loader(args):
     batch_size = args.batch_size
     max_len = args.max_len
@@ -97,16 +110,3 @@ def prepare_infer_input(insts, bos_id, eos_id, pad_id):
     src, src_length = Pad(pad_val=pad_id, ret_length=True)(
         [inst[0] for inst in insts])
     return src, src_length
-
-
-def prepare_train_input(insts, bos_id, eos_id, pad_id):
-    # Add eos token id and bos token id.
-    insts = [([bos_id] + inst[0] + [eos_id], [bos_id] + inst[1] + [eos_id])
-             for inst in insts]
-    # Pad sequence using eos id.
-    src, src_length = Pad(pad_val=pad_id, ret_length=True)(
-        [inst[0] for inst in insts])
-    tgt, tgt_length = Pad(pad_val=pad_id, ret_length=True, dtype="int64")(
-        [inst[1] for inst in insts])
-    tgt_mask = (tgt[:, :-1] != pad_id).astype("float32")
-    return src, tgt[:, :-1], tgt[:, 1:, np.newaxis], tgt_mask
