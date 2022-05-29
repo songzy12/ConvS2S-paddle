@@ -180,9 +180,10 @@ class AttentionLayer(nn.Layer):
 
         # don't attend over padding
         if encoder_padding_mask is not None:
-            x = paddle.where(
+            # TODO(songzy): float('-inf') * 0 == nan
+            x_ = paddle.where(
                 encoder_padding_mask.unsqueeze(1),
-                paddle.full(x.shape, float("-inf"), x.dtype), x)
+                paddle.full(x.shape, -1 << 32, x.dtype), x)
 
         # softmax over last dim
         sz = x.shape
